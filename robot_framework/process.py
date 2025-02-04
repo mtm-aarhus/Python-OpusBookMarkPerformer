@@ -1,3 +1,4 @@
+import json
 from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
 from office365.runtime.auth.user_credential import UserCredential
 from office365.sharepoint.client_context import ClientContext
@@ -13,6 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 import time
+from urllib.parse import unquote, urlparse
 import win32com.client as win32
 import gc
 import subprocess
