@@ -23,6 +23,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
    
     # Global variables for ensuring single execution
     conversion_in_progress = set()
+
     def convert_xls_to_xlsx(path: str) -> None:
         """
         Converts an .xls file to .xlsx format. Times out if the process exceeds the given duration.
@@ -117,33 +118,16 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
     # Define the queue name
     queue_name = "OpusBookmarkQueue" 
-from openpyxl import load_workbook
-import json 
 
-def process(orchestrator_connection: OrchestratorConnection, queue_element: QueueElement | None = None) -> None:
-    #Robotpassword
-    RobotCredential = orchestrator_connection.get_credential("Robot365User")
-    RobotUsername = RobotCredential.username
-    RobotPassword = RobotCredential.password
+    # Get all queue elements with status 'New'
+    queue_item = orchestrator_connection.get_next_queue_element(queue_name)
+    if not queue_item:
+        orchestrator_connection.log_info("No new queue items to process.")
+        exit()
 
-    #Sharepoint
-    API_url = orchestrator_connection.get_constant("AarhusKommuneSharePoint").value
+    specific_content = json.loads(queue_item.data)
 
-    #Connecting to sharepoint
-    credentials = UserCredential(RobotUsername, RobotPassword)
-    ctx = ClientContext(API_url + "/Teams/tea-teamsite11314").with_credentials(credentials)
-    web = ctx.web
-    ctx.load(web)
-    ctx.execute_query()
-
-    # SharePoint site and parent folder URL
-    PARENT_FOLDER_URL = "/Teams/tea-teamsite11314/Delte Dokumenter/OpusBogmærker.xlsx"
-    file_name = PARENT_FOLDER_URL.split("/")[-1]
-    download_path = os.path.join(os.getcwd(), file_name)
-
-    # Download the file to the specified path
-    with open(download_path, "wb") as local_file:
-        file = ctx.web.get_file_by_server_relative_path(PARENT_FOLDER_URL).download(local_file).execute_query()
+    orchestrator_connection.log_info("Assigning variables")
 
     # Assign variables from SpecificContent
     BookmarkID = specific_content.get("Bookmark")
@@ -162,33 +146,25 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     # Mark the queue item as 'In Progress'
     orchestrator_connection.set_queue_element_status(queue_item.id, "IN_PROGRESS")
 
-    if row_count > 0:
-        for row_idx in range(2, ark1.max_row + 1):  # Assuming the first row is a header
-            # Extract data for the queue element
-            row_data = {
-                "Bookmark": ark1[f"A{row_idx}"].value,  # Replace with actual column names
-                "Filnavn": ark1[f"B{row_idx}"].value,  # Adjust column references as needed
-                "SharePointMappeLink": ark1[f"C{row_idx}"].value, 
-                "Dagligt (Ja/Nej)": ark1[f"D{row_idx}"].value, 
-                "MånedsSlut (Ja/Nej)": ark1[f"E{row_idx}"].value, 
-                "MånedsStart (Ja/Nej)": ark1[f"F{row_idx}"].value,
-                "Årlig (Ja/Nej)": ark1[f"G{row_idx}"].value,
-                "Ansvarlig i Økonomi": ark1[f"H{row_idx}"].value,
-                "Rapportype": ark1[f"I{row_idx}"].value,
-                "Fulde link til Opus": orchestrator_connection.get_constant('OpusBookMarkUrl').value + str(ark1[f"A{row_idx}"].value),
-                "Kolonne1": ark1[f"K{row_idx}"].value,
-                "Kommentar": ark1[f"L{row_idx}"].value
-            }
+    # Mark the queue item as 'Done' after processing
+    orchestrator_connection.set_queue_element_status(queue_item.id, "DONE")
 
-            # Prepare queue item with SpecificContent and Reference
-            queue_items.append({
-                "SpecificContent": row_data,
-                "Reference": ark1[f"A{row_idx}"].value  # Assuming column A provides a unique reference
-            })
+    Run = False
+    xlsx_file_path_check = False
 
-        # Prepare references and data for the bulk creation function
-        references = tuple(item["Reference"] for item in queue_items)  # Extract references as a tuple
-        data = tuple(json.dumps(item["SpecificContent"]) for item in queue_items)  # Convert SpecificContent to JSON strings
+    # Testing if it should run
+    if Daily.lower() == "ja":
+        Run = True
+    else:
+        current_date = datetime.now()
+        year, month, day = current_date.year, current_date.month, current_date.day
+        last_day_of_month = calendar.monthrange(year, month)[1]  
+        if MonthEnd.lower() == "ja" and day == last_day_of_month:
+            Run = True
+        elif MonthStart.lower() == "ja" and day == 1:
+            Run = True
+        elif Yearly.lower() == "ja" and day == 31 and month == 12:
+            Run = True
 
     if Run:
         orchestrator_connection.log_info("Connecting to sharepoint")
@@ -196,6 +172,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
         credentials = UserCredential(RobotUsername, RobotPassword)
         ctx = ClientContext(SharepointURL_connection).with_credentials(credentials)
+
         web = ctx.web
         ctx.load(web)
         ctx.execute_query()
@@ -254,8 +231,8 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                         break
                     
                 if time.time() - start_time > 3600:
-                    send_error_email(MailModtager, FileName)
                     orchestrator_connection.log_info("Mail sent due to timeout")
+                    send_error_email(MailModtager, FileName)
                     raise TimeoutError("File download did not complete within 60 minutes.")
                 time.sleep(1)
 
@@ -283,6 +260,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
     if xlsx_file_path_check:
         file_name = os.path.basename(xlsx_file_path)
+        download_path = os.path.join(downloads_folder, file_name)
 
         orchestrator_connection.log_info("Uploading file to sharepoint")
 
@@ -304,7 +282,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     else:
         print("An error occured - file was not processed correctly")
         orchestrator_connection.log_info("An error occured - file was not processed correctly")
-
+        
     #Deleting potential leftover files from downloads folder
     orchestrator_connection.log_info('Deleting local files')
     if os.path.exists(downloads_folder + '\\' + FileName + ".xls"):
