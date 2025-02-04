@@ -19,16 +19,11 @@ dependencies = [
     "OpenOrchestrator == 1.*",
     "pandas == 2.2.3",
     "Office365-REST-Python-Client == 2.5.14",
-<<<<<<< HEAD
     "selenium == 4.27.1",
     "xlrd == 1.2.0",
     "pywin32 == 308",
     "Pillow == 10.*",
     "openpyxl == 3.1.5"
-=======
-    "Pillow == 10.*",
-    "openpyxl==3.1.5",
->>>>>>> 0add3e069684b87af74b4b3625cda8e6784dc6af
 ]
 
 
