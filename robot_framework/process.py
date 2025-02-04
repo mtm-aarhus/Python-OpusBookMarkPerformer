@@ -145,7 +145,6 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     with open(download_path, "wb") as local_file:
         file = ctx.web.get_file_by_server_relative_path(PARENT_FOLDER_URL).download(local_file).execute_query()
 
-<<<<<<< HEAD
     # Assign variables from SpecificContent
     BookmarkID = specific_content.get("Bookmark")
     OpusBookmark = orchestrator_connection.get_constant("OpusBookMarkUrl").value + BookmarkID
@@ -162,17 +161,6 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
     # Mark the queue item as 'In Progress'
     orchestrator_connection.set_queue_element_status(queue_item.id, "IN_PROGRESS")
-=======
-    # Load the workbook using the file path
-    workbook = load_workbook(filename=download_path)
-
-    # Access the workbook
-    ark1 = workbook["Ark1"]
-    ark1 = workbook.active
-    row_count = ark1.max_row
-    
-    queue_items = []
->>>>>>> 0add3e069684b87af74b4b3625cda8e6784dc6af
 
     if row_count > 0:
         for row_idx in range(2, ark1.max_row + 1):  # Assuming the first row is a header
@@ -202,7 +190,6 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         references = tuple(item["Reference"] for item in queue_items)  # Extract references as a tuple
         data = tuple(json.dumps(item["SpecificContent"]) for item in queue_items)  # Convert SpecificContent to JSON strings
 
-<<<<<<< HEAD
     if Run:
         orchestrator_connection.log_info("Connecting to sharepoint")
         SharepointURL_connection = SharePointURL.split("/Delte")[0]
@@ -324,17 +311,3 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         os.remove(downloads_folder + '\\' + FileName + ".xls")
     if os.path.exists(downloads_folder + '\\' + "YKMD_STD.xls"):
         os.remove(downloads_folder + '\\' + "YKMD_STD.xls")
-=======
-        # Bulk add queue items to OpenOrchestrator
-        queue_name = "OpusBookmarkQueue" 
-        try:
-            orchestrator_connection.bulk_create_queue_elements(queue_name, references, data, created_by="AutomatedScript")
-            orchestrator_connection.log_info(f"Successfully added {len(queue_items)} items to the queue.")
-        except Exception as e:
-            print(f"An error occurred while adding items to the queue: {str(e)}")
-    else:
-        orchestrator_connection.log_info("Ingen bogmærker")
-
-    if os.path.exists(file_name):
-        os.remove(file_name)
->>>>>>> 0add3e069684b87af74b4b3625cda8e6784dc6af
