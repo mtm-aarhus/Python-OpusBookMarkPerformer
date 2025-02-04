@@ -14,12 +14,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 import time
-from urllib.parse import unquote, urlparse
 import win32com.client as win32
 import gc
 import subprocess
-
-
+import smtplib
+from email.message import EmailMessage
 
 def process(orchestrator_connection: OrchestratorConnection, queue_element: QueueElement | None = None) -> None:
    
@@ -57,6 +56,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             raise e
         finally:
             conversion_in_progress.remove(absolute_path)
+
     orchestrator_connection.log_info("Started process")
 
     # Opus bruger
@@ -64,10 +64,58 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     OpusUser = OpusLogin.username
     OpusPassword = OpusLogin.password 
 
+    #Define developer mail
+    UdviklerMail = orchestrator_connection.get_constant("balas").value
+
     # Robotpassword
     RobotCredential = orchestrator_connection.get_credential("Robot365User") 
     RobotUsername = RobotCredential.username
     RobotPassword = RobotCredential.password
+
+    # SMTP Configuration (from your provided details)
+    SMTP_SERVER = "smtp.adm.aarhuskommune.dk"
+    SMTP_PORT = 25
+    SCREENSHOT_SENDER = "aktbob@aarhus.dk"
+
+    def send_error_email(to_address: str | list[str], file_name: str):
+        """
+        Sends an email notification with the provided body and subject.
+
+        Args:
+            to_address (str | list[str]): Email address or list of addresses to send the notification.
+            sags_id (str): The ID of the case (SagsID) used in the email subject.
+            deskpro_id (str): The DeskPro ID for constructing the DeskPro link.
+            sharepoint_link (str): The SharePoint link to include in the email body.
+        """
+        # Email subject
+        subject = f"Fejl i processeringen af filen {file_name}"
+
+        # Email body (HTML)
+        body = f"""
+        <html>
+        <body>
+            <p>Der var en fejl i processeringen af filen {file_name} pga. for lang procestid. Hvis fejlen fortsætter, kontakt udvikler</p>
+        </body>
+        </html>
+        """
+
+        # Create the email message
+        msg = EmailMessage()
+        msg['To'] = ', '.join(to_address) if isinstance(to_address, list) else to_address
+        msg['From'] = SCREENSHOT_SENDER
+        msg['Subject'] = subject
+        msg.set_content("Please enable HTML to view this message.")
+        msg.add_alternative(body, subtype='html')
+        msg['Reply-To'] = UdviklerMail
+        msg['Bcc'] = UdviklerMail
+
+        # Send the email using SMTP
+        try:
+            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as smtp:
+                smtp.send_message(msg)
+                
+        except Exception as e:
+            print(f"Failed to send success email: {e}")
 
     # Define the queue name
     queue_name = "OpusBookmarkQueue" 
@@ -85,17 +133,18 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     # Assign variables from SpecificContent
     BookmarkID = specific_content.get("Bookmark")
     OpusBookmark = orchestrator_connection.get_constant("OpusBookMarkUrl").value + BookmarkID
-    SharePointURL = orchestrator_connection.get_constant("LauraTestSharepointURLFullPath").value
+    SharePointURL = orchestrator_connection.get_constant("AarhusKommuneSharePoint").value + "/Teams/tea-teamsite11819/Delte%20dokumenter/Forms/AllItems.aspx?id=%2FTeams%2Ftea%2Dteamsite11819%2FDelte%20dokumenter%2FDokumentlister&viewid=a5a48e76%2D9972%2D4980%2Dbf37%2D18596d6a27be"
     #SharepointURL = specific_content.get("SharePointMappeLink", None)
     FileName = specific_content.get("Filnavn", None)
     Daily = specific_content.get("Dagligt (Ja/Nej)", None)
     MonthEnd = specific_content.get("MånedsSlut (Ja/Nej)", None)
     MonthStart = specific_content.get("MånedsStart (Ja/Nej)", None)
     Yearly = specific_content.get("Årligt (Ja/Nej)", None)
-    print(FileName)
-    orchestrator_connection.log_info(FileName)
+    MailModtager = specific_content.get("Ansvarlig i Økonomi", None)
+    MailModtager = UdviklerMail
+    orchestrator_connection.log_info(f'Processing {FileName}')
 
-        # Mark the queue item as 'In Progress'
+    # Mark the queue item as 'In Progress'
     orchestrator_connection.set_queue_element_status(queue_item.id, "IN_PROGRESS")
 
     # Mark the queue item as 'Done' after processing
@@ -124,7 +173,6 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
         credentials = UserCredential(RobotUsername, RobotPassword)
         ctx = ClientContext(SharepointURL_connection).with_credentials(credentials)
-
         web = ctx.web
         ctx.load(web)
         ctx.execute_query()
@@ -143,6 +191,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             "download.directory_upgrade": True,
         })
         chrome_options.add_argument("--disable-search-engine-choice-screen")
+
         chrome_service = Service()
         driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
         
@@ -157,14 +206,13 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             
             orchestrator_connection.log_info("Logged in to Opus portal successfully")
             driver.get(OpusBookmark)
-            orchestrator_connection.log_info("Driver got bookmark")
             WebDriverWait(driver, timeout = 60*15).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe[id^='iframe_Roundtrip']")))
 
             WebDriverWait(driver, timeout = 60*15).until(EC.presence_of_element_located((By.ID, "BUTTON_EXPORT_btn1_acButton")))
             driver.find_element(By.ID, "BUTTON_EXPORT_btn1_acButton").click()
 
             orchestrator_connection.log_info("Waiting for file download to complete")
-            time.sleep(2)
+            time.sleep(1)
 
             initial_file_count = len(os.listdir(downloads_folder))
             start_time = time.time()
@@ -182,11 +230,13 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                         xlsx_file_path_check = True
                         break
                     
-                if time.time() - start_time > 1800:
-                    raise TimeoutError("File download did not complete within 30 minutes.")
-                    
+                if time.time() - start_time > 3600:
+                    send_error_email(MailModtager, FileName)
+                    orchestrator_connection.log_info("Mail sent due to timeout")
+                    raise TimeoutError("File download did not complete within 60 minutes.")
                 time.sleep(1)
-            if xlsx_file_path_check == True:
+
+            if xlsx_file_path_check:
                 xlsx_file_path = os.path.join(downloads_folder, FileName + ".xlsx")
                 try:
                     orchestrator_connection.log_info(f'Converting {new_file_path}')
@@ -207,10 +257,9 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             print(f"An error occurred: {e}")
         finally:
             driver.quit()
-    print(str(xlsx_file_path_check) + "Check")
-    if xlsx_file_path_check == True:
+
+    if xlsx_file_path_check:
         file_name = os.path.basename(xlsx_file_path)
-        download_path = os.path.join(downloads_folder, file_name)
 
         orchestrator_connection.log_info("Uploading file to sharepoint")
 
@@ -231,12 +280,11 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             os.remove(xlsx_file_path)
     else:
         print("An error occured - file was not processed correctly")
-        orchestrator_connection.log_error("An error occured - file was not processed correctly")
+        orchestrator_connection.log_info("An error occured - file was not processed correctly")
 
     #Deleting potential leftover files from downloads folder
     orchestrator_connection.log_info('Deleting local files')
     if os.path.exists(downloads_folder + '\\' + FileName + ".xls"):
-        os.remove(downloads_folder + '\\' +  FileName + ".xls")
-    if os.path.exists("YKMD_STD.xls"):
-        os.remove("YKMD_STD.xls")
-
+        os.remove(downloads_folder + '\\' + FileName + ".xls")
+    if os.path.exists(downloads_folder + '\\' + "YKMD_STD.xls"):
+        os.remove(downloads_folder + '\\' + "YKMD_STD.xls")
