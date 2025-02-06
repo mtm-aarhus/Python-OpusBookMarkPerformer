@@ -133,7 +133,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
     # Assign variables from SpecificContent
     BookmarkID = specific_content.get("Bookmark")
-    OpusBookmark = orchestrator_connection.get_constant("OpusBookMarkUrl").value + BookmarkID
+    OpusBookmark = orchestrator_connection.get_constant("OpusBookMarkUrl").value + str(BookmarkID)
     SharePointURL = orchestrator_connection.get_constant("AarhusKommuneSharePoint").value + "/Teams/tea-teamsite11819/Delte%20dokumenter/Forms/AllItems.aspx?id=%2FTeams%2Ftea%2Dteamsite11819%2FDelte%20dokumenter%2FDokumentlister&viewid=a5a48e76%2D9972%2D4980%2Dbf37%2D18596d6a27be"
     #SharepointURL = specific_content.get("SharePointMappeLink", None)
     FileName = specific_content.get("Filnavn", None)
