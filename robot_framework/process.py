@@ -212,11 +212,11 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
             WebDriverWait(driver, timeout = 60*15).until(EC.presence_of_element_located((By.ID, "BUTTON_EXPORT_btn1_acButton")))
             driver.find_element(By.ID, "BUTTON_EXPORT_btn1_acButton").click()
+            initial_file_count = len(os.listdir(downloads_folder))
 
             orchestrator_connection.log_info("Waiting for file download to complete")
-            time.sleep(1)
 
-            initial_file_count = len(os.listdir(downloads_folder))
+            
             start_time = time.time()
             while True:
                 files = os.listdir(downloads_folder)
