@@ -150,6 +150,8 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
     # Mark the queue item as 'Done' after processing
     orchestrator_connection.set_queue_element_status(queue_item.id, "DONE")
+    if not BookmarkID:
+        exit 
 
     Run = False
     xlsx_file_path_check = False
