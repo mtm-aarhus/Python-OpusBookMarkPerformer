@@ -20,6 +20,7 @@ import gc
 import subprocess
 import smtplib
 from email.message import EmailMessage
+import sys
 
 def process(orchestrator_connection: OrchestratorConnection, queue_element: QueueElement | None = None) -> None:
    
@@ -125,7 +126,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     queue_item = orchestrator_connection.get_next_queue_element(queue_name)
     if not queue_item:
         orchestrator_connection.log_info("No new queue items to process.")
-        exit()
+        sys.exit()
 
     specific_content = json.loads(queue_element.data)
 
@@ -148,27 +149,31 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     # Mark the queue item as 'In Progress'
     orchestrator_connection.set_queue_element_status(queue_item.id, "IN_PROGRESS")
 
-    # Mark the queue item as 'Done' after processing
-    orchestrator_connection.set_queue_element_status(queue_item.id, "DONE")
-    if not BookmarkID:
-        exit()
+    # Ensure that at least one of the options is not None
+    if all(option is None for option in [Daily, MonthEnd, MonthStart, Yearly]):
+        print("No option selected. Exiting.")
+        sys.exit()
 
     Run = False
     xlsx_file_path_check = False
 
+    current_date = datetime.now()
+    year, month, day = current_date.year, current_date.month, current_date.day
+    last_day_of_month = calendar.monthrange(year, month)[1]  
+
     # Testing if it should run
-    if Daily.lower() == "ja":
+    if Daily and Daily.lower() == "ja":
         Run = True
-    else:
-        current_date = datetime.now()
-        year, month, day = current_date.year, current_date.month, current_date.day
-        last_day_of_month = calendar.monthrange(year, month)[1]  
-        if MonthEnd.lower() == "ja" and day == last_day_of_month:
-            Run = True
-        elif MonthStart.lower() == "ja" and day == 1:
-            Run = True
-        elif Yearly.lower() == "ja" and day == 31 and month == 12:
-            Run = True
+    elif MonthEnd and MonthEnd.lower() == "ja" and day == last_day_of_month:
+        Run = True
+    elif MonthStart and MonthStart.lower() == "ja" and day == 1:
+        Run = True
+    elif Yearly and Yearly.lower() == "ja" and day == 31 and month == 12:
+        Run = True
+   # Mark the queue item as 'Done' after processing
+    orchestrator_connection.set_queue_element_status(queue_item.id, "DONE")
+    if not BookmarkID:
+        exit()
 
     if Run:
         orchestrator_connection.log_info("Connecting to sharepoint")
