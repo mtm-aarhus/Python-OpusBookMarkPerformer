@@ -142,7 +142,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     orchestrator_connection.log_info(f'Processing {FileName}')
 
     # Mark the queue item as 'In Progress'
-    orchestrator_connection.set_queue_element_status(queue_item.id, "IN_PROGRESS")
+    orchestrator_connection.set_queue_element_status(queue_element.id, "IN_PROGRESS")
 
     # Ensure that at least one of the options is not None
     if all(option is None for option in [Daily, MonthEnd, MonthStart, Yearly]):
@@ -166,7 +166,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     elif Yearly and Yearly.lower() == "ja" and day == 31 and month == 12:
         Run = True
    # Mark the queue item as 'Done' after processing
-    orchestrator_connection.set_queue_element_status(queue_item.id, "DONE")
+    orchestrator_connection.set_queue_element_status(queue_element.id, "DONE")
     if not BookmarkID:
         exit()
 
