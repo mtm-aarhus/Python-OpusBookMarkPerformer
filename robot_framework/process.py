@@ -119,12 +119,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         except Exception as e:
             print(f"Failed to send success email: {e}")
 
-    # # Define the queue name
-    queue_name = "OpusBookmarkQueue" 
-
-    # Get all queue elements with status 'New'
-    queue_item = orchestrator_connection.get_next_queue_element(queue_name)
-    if not queue_item:
+    if not queue_element:
         orchestrator_connection.log_info("No new queue items to process.")
         sys.exit()
 
