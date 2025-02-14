@@ -119,10 +119,6 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         except Exception as e:
             print(f"Failed to send success email: {e}")
 
-    if not queue_element:
-        orchestrator_connection.log_info("No new queue items to process.")
-        sys.exit()
-
     specific_content = json.loads(queue_element.data)
 
     orchestrator_connection.log_info("Assigning variables")
@@ -140,9 +136,6 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     MailModtager = specific_content.get("Ansvarlig i Økonomi", None)
     MailModtager = UdviklerMail
     orchestrator_connection.log_info(f'Processing {FileName}')
-
-    # Mark the queue item as 'In Progress'
-    orchestrator_connection.set_queue_element_status(queue_element.id, "IN_PROGRESS")
 
     # Ensure that at least one of the options is not None
     if all(option is None for option in [Daily, MonthEnd, MonthStart, Yearly]):
@@ -166,7 +159,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     elif Yearly and Yearly.lower() == "ja" and day == 31 and month == 12:
         Run = True
    # Mark the queue item as 'Done' after processing
-    orchestrator_connection.set_queue_element_status(queue_element.id, "DONE")
+  
     if not BookmarkID:
         exit()
 
