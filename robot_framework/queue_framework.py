@@ -82,46 +82,46 @@ def main():
     if config.FAIL_ROBOT_ON_TOO_MANY_ERRORS and error_count == config.MAX_RETRY_COUNT:
         raise RuntimeError("Process failed too many times.")
     
- def send_error_email(to_address: str | list[str], file_name: str, UdviklerMail ):
-        """
-        Sends an email notification with the provided body and subject.
+def send_error_email(to_address: str | list[str], file_name: str, UdviklerMail ):
+    """
+    Sends an email notification with the provided body and subject.
 
-        Args:
-            to_address (str | list[str]): Email address or list of addresses to send the notification.
-            sags_id (str): The ID of the case (SagsID) used in the email subject.
-            deskpro_id (str): The DeskPro ID for constructing the DeskPro link.
-            sharepoint_link (str): The SharePoint link to include in the email body.
-        """
-            # SMTP Configuration (from your provided details)
-        SMTP_SERVER = "smtp.adm.aarhuskommune.dk"
-        SMTP_PORT = 25
-        SCREENSHOT_SENDER = "aktbob@aarhus.dk"
-        # Email subject
-        subject = f"Fejl i processeringen af filen {file_name}"
+    Args:
+        to_address (str | list[str]): Email address or list of addresses to send the notification.
+        sags_id (str): The ID of the case (SagsID) used in the email subject.
+        deskpro_id (str): The DeskPro ID for constructing the DeskPro link.
+        sharepoint_link (str): The SharePoint link to include in the email body.
+    """
+        # SMTP Configuration (from your provided details)
+    SMTP_SERVER = "smtp.adm.aarhuskommune.dk"
+    SMTP_PORT = 25
+    SCREENSHOT_SENDER = "aktbob@aarhus.dk"
+    # Email subject
+    subject = f"Fejl i processeringen af filen {file_name}"
 
-        # Email body (HTML)
-        body = f"""
-        <html>
-        <body>
-            <p>Der var en fejl i processeringen af filen {file_name} pga. for lang procestid. Hvis fejlen fortsætter, kontakt udvikler</p>
-        </body>
-        </html>
-        """
+    # Email body (HTML)
+    body = f"""
+    <html>
+    <body>
+        <p>Der var en fejl i processeringen af filen {file_name} pga. for lang procestid. Hvis fejlen fortsætter, kontakt udvikler</p>
+    </body>
+    </html>
+    """
 
-        # Create the email message
-        msg = EmailMessage()
-        msg['To'] = ', '.join(to_address) if isinstance(to_address, list) else to_address
-        msg['From'] = SCREENSHOT_SENDER
-        msg['Subject'] = subject
-        msg.set_content("Please enable HTML to view this message.")
-        msg.add_alternative(body, subtype='html')
-        msg['Reply-To'] = UdviklerMail
-        msg['Bcc'] = UdviklerMail
+    # Create the email message
+    msg = EmailMessage()
+    msg['To'] = ', '.join(to_address) if isinstance(to_address, list) else to_address
+    msg['From'] = SCREENSHOT_SENDER
+    msg['Subject'] = subject
+    msg.set_content("Please enable HTML to view this message.")
+    msg.add_alternative(body, subtype='html')
+    msg['Reply-To'] = UdviklerMail
+    msg['Bcc'] = UdviklerMail
 
-        # Send the email using SMTP
-        try:
-            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as smtp:
-                smtp.send_message(msg)
-                
-        except Exception as e:
-            print(f"Failed to send success email: {e}")
+    # Send the email using SMTP
+    try:
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as smtp:
+            smtp.send_message(msg)
+            
+    except Exception as e:
+        print(f"Failed to send success email: {e}")
