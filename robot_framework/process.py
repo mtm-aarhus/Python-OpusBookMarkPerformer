@@ -212,10 +212,11 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         id_param = query_params.get("id", [None])[0]
         if not id_param:
             decoded_path = SharePointURL.split('/r/')[1].split('?')[0]
+            target_folder = ctx.web.get_folder_by_server_relative_path(decoded_path)
         else:
             decoded_path = unquote(id_param)
             decoded_path = decoded_path.rstrip('/')
-        target_folder = ctx.web.get_folder_by_server_relative_url(decoded_path)
+            target_folder = ctx.web.get_folder_by_server_relative_url(decoded_path)
 
         with open(xlsx_file_path, "rb") as local_file:
             target_folder.upload_file(file_name, local_file.read()).execute_query()
