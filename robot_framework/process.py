@@ -18,8 +18,6 @@ from urllib.parse import unquote, urlparse
 import win32com.client as win32
 import gc
 import subprocess
-import smtplib
-from email.message import EmailMessage
 import sys
 
 def process(orchestrator_connection: OrchestratorConnection, queue_element: QueueElement | None = None) -> None:
@@ -66,58 +64,11 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     OpusUser = OpusLogin.username
     OpusPassword = OpusLogin.password 
 
-    #Define developer mail
-    UdviklerMail = orchestrator_connection.get_constant("balas").value
-
     # Robotpassword
     RobotCredential = orchestrator_connection.get_credential("Robot365User") 
     RobotUsername = RobotCredential.username
     RobotPassword = RobotCredential.password
 
-    # SMTP Configuration (from your provided details)
-    SMTP_SERVER = "smtp.adm.aarhuskommune.dk"
-    SMTP_PORT = 25
-    SCREENSHOT_SENDER = "aktbob@aarhus.dk"
-
-    def send_error_email(to_address: str | list[str], file_name: str):
-        """
-        Sends an email notification with the provided body and subject.
-
-        Args:
-            to_address (str | list[str]): Email address or list of addresses to send the notification.
-            sags_id (str): The ID of the case (SagsID) used in the email subject.
-            deskpro_id (str): The DeskPro ID for constructing the DeskPro link.
-            sharepoint_link (str): The SharePoint link to include in the email body.
-        """
-        # Email subject
-        subject = f"Fejl i processeringen af filen {file_name}"
-
-        # Email body (HTML)
-        body = f"""
-        <html>
-        <body>
-            <p>Der var en fejl i processeringen af filen {file_name} pga. for lang procestid. Hvis fejlen fortsætter, kontakt udvikler</p>
-        </body>
-        </html>
-        """
-
-        # Create the email message
-        msg = EmailMessage()
-        msg['To'] = ', '.join(to_address) if isinstance(to_address, list) else to_address
-        msg['From'] = SCREENSHOT_SENDER
-        msg['Subject'] = subject
-        msg.set_content("Please enable HTML to view this message.")
-        msg.add_alternative(body, subtype='html')
-        msg['Reply-To'] = UdviklerMail
-        msg['Bcc'] = UdviklerMail
-
-        # Send the email using SMTP
-        try:
-            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as smtp:
-                smtp.send_message(msg)
-                
-        except Exception as e:
-            print(f"Failed to send success email: {e}")
 
     specific_content = json.loads(queue_element.data)
 
@@ -126,15 +77,12 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     # Assign variables from SpecificContent
     BookmarkID = specific_content.get("Bookmark")
     OpusBookmark = orchestrator_connection.get_constant("OpusBookMarkUrl").value + str(BookmarkID)
-    SharePointURL = orchestrator_connection.get_constant("AarhusKommuneSharePoint").value + "/Teams/tea-teamsite11819/Delte%20dokumenter/Forms/AllItems.aspx?id=%2FTeams%2Ftea%2Dteamsite11819%2FDelte%20dokumenter%2FDokumentlister&viewid=a5a48e76%2D9972%2D4980%2Dbf37%2D18596d6a27be"
-    #SharepointURL = specific_content.get("SharePointMappeLink", None)
+    SharepointURL = specific_content.get("SharePointMappeLink", None)
     FileName = specific_content.get("Filnavn", None)
     Daily = specific_content.get("Dagligt (Ja/Nej)", None)
     MonthEnd = specific_content.get("MånedsSlut (Ja/Nej)", None)
     MonthStart = specific_content.get("MånedsStart (Ja/Nej)", None)
     Yearly = specific_content.get("Årligt (Ja/Nej)", None)
-    MailModtager = specific_content.get("Ansvarlig i Økonomi", None)
-    MailModtager = UdviklerMail
     orchestrator_connection.log_info(f'Processing {FileName}')
 
     # Ensure that at least one of the options is not None
@@ -158,8 +106,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         Run = True
     elif Yearly and Yearly.lower() == "ja" and day == 31 and month == 12:
         Run = True
-   # Mark the queue item as 'Done' after processing
-  
+
     if not BookmarkID:
         exit()
 
@@ -229,7 +176,6 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                     
                 if time.time() - start_time > 3600:
                     orchestrator_connection.log_info("Mail sent due to timeout")
-                    send_error_email(MailModtager, FileName)
                     raise TimeoutError("File download did not complete within 60 minutes.")
                 time.sleep(1)
 
