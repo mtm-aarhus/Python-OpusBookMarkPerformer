@@ -103,7 +103,7 @@ def send_error_email(to_address: str | list[str], file_name: str, UdviklerMail )
     body = f"""
     <html>
     <body>
-        <p>Der var en fejl i processeringen af filen {file_name} pga. for lang procestid. Hvis fejlen fortsætter, kontakt udvikler</p>
+        <p>Der var en fejl i processeringen af filen {file_name}. Hvis fejlen fortsætter, kontakt udvikler</p>
     </body>
     </html>
     """
