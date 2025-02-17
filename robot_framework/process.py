@@ -211,7 +211,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         query_params = parse_qs(parsed_url.query)
         id_param = query_params.get("id", [None])[0]
         if not id_param:
-            decoded_path = SharePointURL.split('/r')[1].split('?')[0]
+            decoded_path = SharePointURL.split('/r/')[1].split('?')[0]
         else:
             decoded_path = unquote(id_param)
             decoded_path = decoded_path.rstrip('/')
