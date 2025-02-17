@@ -211,9 +211,10 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         query_params = parse_qs(parsed_url.query)
         id_param = query_params.get("id", [None])[0]
         if not id_param:
-            raise ValueError("No 'id' parameter found in the URL.")
-        decoded_path = unquote(id_param)
-        decoded_path = decoded_path.rstrip('/')
+            decoded_path = parsed_url.split('.com/')[1].split('?')[0]
+        else:
+            decoded_path = unquote(id_param)
+            decoded_path = decoded_path.rstrip('/')
         target_folder = ctx.web.get_folder_by_server_relative_url(decoded_path)
 
         with open(xlsx_file_path, "rb") as local_file:
