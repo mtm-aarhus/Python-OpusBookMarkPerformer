@@ -43,6 +43,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             orchestrator_connection.log_info(f'Absolute path {absolute_path} found')
             excel = win32.gencache.EnsureDispatch('Excel.Application')
             wb = excel.Workbooks.Open(absolute_path)
+            wb.Sheets(1).Name = "YKMD_STD"
 
             # FileFormat=51 is for .xlsx extension
             new_path = os.path.splitext(absolute_path)[0] + ".xlsx"
@@ -125,7 +126,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             sitename = SharePointURL.split('Sites/')[1].split('/')[0]
             base_url = f"{base_url}/Sites/{sitename}"
         else:
-            print("⚠️ WARNING: Could not determine if this is a Teams or Sites URL. Using default base_url.")
+            print("WARNING: Could not determine if this is a Teams or Sites URL. Using default base_url.")
 
 
         # Authenticate with SharePoint
