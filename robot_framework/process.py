@@ -115,9 +115,18 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
         # Parse the base URL
         parsed_url = urlparse(SharePointURL)
-        teamsite = SharePointURL.split('teamsite')[1].split('/')[0]
+        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
-        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}/Teams/tea-teamsite{teamsite}"
+        # **Automatically Detect if it's a Teams or Sites URL**
+        if "/Teams/" in SharePointURL:
+            teamsite = SharePointURL.split('Teams/')[1].split('/')[0]
+            base_url = f"{base_url}/Teams/{teamsite}"
+        elif "/Sites/" in SharePointURL:
+            sitename = SharePointURL.split('Sites/')[1].split('/')[0]
+            base_url = f"{base_url}/Sites/{sitename}"
+        else:
+            print("⚠️ WARNING: Could not determine if this is a Teams or Sites URL. Using default base_url.")
+
 
         # Authenticate with SharePoint
         credentials = UserCredential(RobotUsername,RobotPassword)
