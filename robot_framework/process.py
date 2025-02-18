@@ -14,7 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 import time
-from urllib.parse import unquote, urlparse
+from urllib.parse import urlparse, parse_qs, unquote
 import win32com.client as win32
 import gc
 import subprocess
@@ -112,13 +112,17 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
     if Run:
         orchestrator_connection.log_info("Connecting to sharepoint")
-        SharepointURL_connection = SharePointURL.split("/Delte")[0]
 
-        credentials = UserCredential(RobotUsername, RobotPassword)
-        ctx = ClientContext(SharepointURL_connection).with_credentials(credentials)
+        # Parse the base URL
+        parsed_url = urlparse(SharePointURL)
+        teamsite = SharePointURL.split('teamsite')[1].split('/')[0]
 
-        web = ctx.web
-        ctx.load(web)
+        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}/Teams/tea-teamsite{teamsite}"
+
+        # Authenticate with SharePoint
+        credentials = UserCredential(RobotUsername,RobotPassword)
+        ctx = ClientContext(base_url).with_credentials(credentials)
+        ctx.load(ctx.web)
         ctx.execute_query()
 
         downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
@@ -203,21 +207,37 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
     if xlsx_file_path_check:
         file_name = os.path.basename(xlsx_file_path)
-        download_path = os.path.join(downloads_folder, file_name)
-
         orchestrator_connection.log_info("Uploading file to sharepoint")
 
-        parsed_url = urlparse(SharePointURL)
+        # Extract path correctly
         query_params = parse_qs(parsed_url.query)
         id_param = query_params.get("id", [None])[0]
-        if not id_param:
-            decoded_path = SharePointURL.split('/r/')[1].split('?')[0]
-            target_folder = ctx.web.get_folder_by_server_relative_path(decoded_path)
-        else:
-            decoded_path = unquote(id_param)
-            decoded_path = decoded_path.rstrip('/')
-            target_folder = ctx.web.get_folder_by_server_relative_url(decoded_path)
 
+        if id_param:
+            # If it's a sharing link with an ID, extract the correct path
+            decoded_path = unquote(id_param).rstrip('/')
+        else:
+            # Normal URL or sharing link without ID
+            if "/r/" in SharePointURL:
+                decoded_path = SharePointURL.split('/r/', 1)[1].split('?', 1)[0]
+            else:
+                decoded_path = parsed_url.path.lstrip('/')
+
+        # **Replace %20 with spaces to match SharePoint folder structure**
+        decoded_path = decoded_path.replace("%20", " ")
+
+        # Ensure the correct format
+        if not decoded_path.startswith("/"):
+            decoded_path = "/" + decoded_path
+
+        folder_relative_url = decoded_path
+        target_folder = ctx.web.get_folder_by_server_relative_path(folder_relative_url)
+        ctx.load(target_folder)
+        ctx.execute_query()
+
+        # Upload file
+       
+        file_name = os.path.basename(xlsx_file_path)
         with open(xlsx_file_path, "rb") as local_file:
             target_folder.upload_file(file_name, local_file.read()).execute_query()
             print(f"File '{file_name}' uploaded successfully to {SharePointURL}")
