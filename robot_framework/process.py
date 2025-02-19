@@ -246,7 +246,6 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         ctx.execute_query()
 
         # Upload file
-       
         file_name = os.path.basename(xlsx_file_path)
         with open(xlsx_file_path, "rb") as local_file:
             target_folder.upload_file(file_name, local_file.read()).execute_query()
