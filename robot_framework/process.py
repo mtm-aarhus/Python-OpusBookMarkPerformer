@@ -212,9 +212,8 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         except Exception as e:
             orchestrator_connection.log_error(f"An error occurred: {e}")
             print(f"An error occurred: {e}")
-        finally:
             driver.quit()
-            raise
+            raise e
 
     if xlsx_file_path_check:
         file_name = os.path.basename(xlsx_file_path)
