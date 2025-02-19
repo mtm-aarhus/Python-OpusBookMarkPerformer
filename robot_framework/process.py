@@ -208,7 +208,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                         os.remove(xlsx_file_path)
                     orchestrator_connection.log_error(str(e))
                     raise e
-
+            driver.quit()
         except Exception as e:
             orchestrator_connection.log_error(f"An error occurred: {e}")
             print(f"An error occurred: {e}")
