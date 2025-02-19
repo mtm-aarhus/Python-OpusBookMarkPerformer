@@ -214,6 +214,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             print(f"An error occurred: {e}")
         finally:
             driver.quit()
+            raise
 
     if xlsx_file_path_check:
         file_name = os.path.basename(xlsx_file_path)
