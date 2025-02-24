@@ -21,11 +21,6 @@ import subprocess
 import sys
 import socket
 
-def find_free_port():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("localhost", 0))  # Bind to an available port
-        return s.getsockname()[1]  # Return the assigned port
-
 def process(orchestrator_connection: OrchestratorConnection, queue_element: QueueElement | None = None) -> None:
    
     # Global variables for ensuring single execution
@@ -150,10 +145,9 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             os.remove(file_path)
             print('File removed')
 
-        free_port = find_free_port()
         chrome_options = Options()
-        chrome_options.add_argument(f"--remote-debugging-port={free_port}")  # Use free port
-        chrome_options.add_argument("--headless")
+
+        chrome_options.add_argument("--headless-new")
         chrome_options.add_argument("--disable-gpu")
 
         chrome_options.add_experimental_option("prefs", {
@@ -162,9 +156,22 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             "download.directory_upgrade": True,
         })
         chrome_options.add_argument("--disable-search-engine-choice-screen")
+        chrome_options.add_argument("--disable-notifications")
 
         chrome_service = Service()
-        driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+        
+        max_retries = 3
+
+        for attempt in range(1, max_retries +1):
+            try:
+                time.sleep(0.5)
+                driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+                break
+            except Exception as e:
+                orchestrator_connection.log_error(f'Forsøg {attempt} fejlede: {e}')
+                if attempt == max_retries:
+                    raise
+                time.sleep(1)
         
         try:
             orchestrator_connection.log_info("Navigating to Opus login page")
