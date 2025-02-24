@@ -19,6 +19,12 @@ import win32com.client as win32
 import gc
 import subprocess
 import sys
+import socket
+
+def find_free_port():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("localhost", 0))  # Bind to an available port
+        return s.getsockname()[1]  # Return the assigned port
 
 def process(orchestrator_connection: OrchestratorConnection, queue_element: QueueElement | None = None) -> None:
    
@@ -79,6 +85,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     BookmarkID = specific_content.get("Bookmark")
     OpusBookmark = orchestrator_connection.get_constant("OpusBookMarkUrl").value + str(BookmarkID)
     SharePointURL = specific_content.get("SharePointMappeLink", None)
+    SharePointURL = f'{orchestrator_connection.get_constant('AarhusKommuneSharePoint')}/Teams/tea-teamsite11819/Delte%20dokumenter/Forms/AllItems.aspx?id=%2FTeams%2Ftea%2Dteamsite11819%2FDelte%20dokumenter%2FOPUSrobottest&viewid=a5a48e76%2D9972%2D4980%2Dbf37%2D18596d6a27be'
     FileName = specific_content.get("Filnavn", None)
     Daily = specific_content.get("Dagligt (Ja/Nej)", None)
     MonthEnd = specific_content.get("MånedsSlut (Ja/Nej)", None)
@@ -142,7 +149,12 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             os.remove(file_path)
             print('File removed')
 
+        free_port = find_free_port()
         chrome_options = Options()
+        chrome_options.add_argument(f"--remote-debugging-port={free_port}")  # Use free port
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--disable-gpu")
+
         chrome_options.add_experimental_option("prefs", {
             "download.default_directory": downloads_folder,
             "download.prompt_for_download": False,
