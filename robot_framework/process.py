@@ -85,7 +85,8 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     BookmarkID = specific_content.get("Bookmark")
     OpusBookmark = orchestrator_connection.get_constant("OpusBookMarkUrl").value + str(BookmarkID)
     SharePointURL = specific_content.get("SharePointMappeLink", None)
-    SharePointURL = f'{orchestrator_connection.get_constant('AarhusKommuneSharePoint')}/Teams/tea-teamsite11819/Delte%20dokumenter/Forms/AllItems.aspx?id=%2FTeams%2Ftea%2Dteamsite11819%2FDelte%20dokumenter%2FOPUSrobottest&viewid=a5a48e76%2D9972%2D4980%2Dbf37%2D18596d6a27be'
+    SharePointURL = f'{orchestrator_connection.get_constant('AarhusKommuneSharePoint')}/Teams/tea-teamsite11819/Delte%20dokumenter/Forms/AllItems.aspx?id=%2FTeams%2Ftea-teamsite11819%2FDelte%20dokumenter%2FOPUSrobottest&viewid=a5a48e76-9972-4980-bf37-18596d6a27be'
+    print(SharePointURL)
     FileName = specific_content.get("Filnavn", None)
     Daily = specific_content.get("Dagligt (Ja/Nej)", None)
     MonthEnd = specific_content.get("MånedsSlut (Ja/Nej)", None)
