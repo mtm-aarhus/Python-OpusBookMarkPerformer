@@ -243,7 +243,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                     time.sleep(2)
                     if os.path.exists(xlsx_file_path):
                         os.remove(xlsx_file_path)
-                    orchestrator_connection.log_error(str(e))
+                    orchestrator_connection.log_error(f'An error happened {str(e)}')
                     raise e
             driver.quit()
         except Exception as e:
