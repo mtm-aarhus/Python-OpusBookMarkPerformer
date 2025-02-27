@@ -20,6 +20,7 @@ import gc
 import subprocess
 import sys
 import socket
+from pebble import concurrent
 
 def find_free_port():
     """Find an available port for Chrome remote debugging."""
@@ -37,7 +38,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
    
     # Global variables for ensuring single execution
     conversion_in_progress = set()
-
+    @concurrent(timeout=300)
     def convert_xls_to_xlsx(path: str) -> None:
         """
         Converts an .xls file to .xlsx format. Times out if the process exceeds the given duration.
@@ -154,6 +155,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         if os.path.exists(file_path):
             os.remove(file_path)
             print('File removed')
+
         free_port = find_free_port()
         if not is_port_available(free_port):
             print(f"Port {free_port} is in use! Finding another...")
@@ -178,7 +180,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
         for attempt in range(1, max_retries +1):
             try:
-                time.sleep(0.5)
+                time.sleep(1)
                 driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
                 break
             except Exception as e:
