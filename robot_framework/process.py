@@ -93,6 +93,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     BookmarkID = specific_content.get("Bookmark")
     OpusBookmark = orchestrator_connection.get_constant("OpusBookMarkUrl").value + str(BookmarkID)
     SharePointURL = specific_content.get("SharePointMappeLink", None)
+    SharePointURL = f'{orchestrator_connection.get_constant('AarhusKommuneSharePoint').value}/Teams/tea-teamsite11819/Delte%20dokumenter/Forms/AllItems.aspx?id=%2FTeams%2Ftea-teamsite11819%2FDelte%20dokumenter%2FOPUSrobottest&viewid=a5a48e76-9972-4980-bf37-18596d6a27be' 
     FileName = specific_content.get("Filnavn", None)
     Daily = specific_content.get("Dagligt (Ja/Nej)", None)
     MonthEnd = specific_content.get("MånedsSlut (Ja/Nej)", None)
@@ -269,6 +270,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                 decoded_path = SharePointURL.split('/r/', 1)[1].split('?', 1)[0]
             else:
                 decoded_path = parsed_url.path.lstrip('/')
+        orchestrator_connection.log_info('Path extracted')
 
         # **Replace %20 with spaces to match SharePoint folder structure**
         decoded_path = decoded_path.replace("%20", " ")
@@ -286,7 +288,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         file_name = os.path.basename(xlsx_file_path)
         with open(xlsx_file_path, "rb") as local_file:
             target_folder.upload_file(file_name, local_file.read()).execute_query()
-            print(f"File '{file_name}' uploaded successfully to {SharePointURL}")
+            orchestrator_connection.log_info(f"File '{file_name}' uploaded successfully to {SharePointURL}")
             
         if os.path.exists(xlsx_file_path):
             os.remove(xlsx_file_path)
