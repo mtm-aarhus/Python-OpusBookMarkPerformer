@@ -200,15 +200,16 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             
             orchestrator_connection.log_info("Logged in to Opus portal successfully")
             driver.get(OpusBookmark)
-            WebDriverWait(driver, timeout = 60*15).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe[id^='iframe_Roundtrip']")))
+            WebDriverWait(driver, timeout = 60*25).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe[id^='iframe_Roundtrip']")))
+            orchestrator_connection.log_info("First thing appeared")
 
-            WebDriverWait(driver, timeout = 60*15).until(EC.presence_of_element_located((By.ID, "BUTTON_EXPORT_btn1_acButton")))
+            WebDriverWait(driver, timeout = 60*25).until(EC.presence_of_element_located((By.ID, "BUTTON_EXPORT_btn1_acButton")))
             driver.find_element(By.ID, "BUTTON_EXPORT_btn1_acButton").click()
+            orchestrator_connection.log_info("second thing appeared")
             initial_file_count = len(os.listdir(downloads_folder))
 
             orchestrator_connection.log_info("Waiting for file download to complete")
 
-            
             start_time = time.time()
             while True:
                 files = os.listdir(downloads_folder)
