@@ -38,7 +38,7 @@ def is_port_available(port):
 conversion_in_progress = set()
 
 @concurrent.process(timeout=300)
-def convert_xls_to_xlsx(orchestrator_connection, path: str) -> None:
+def convert_xls_to_xlsx( path: str) -> None:
     """
     Converts an .xls file to .xlsx format. Times out if the process exceeds the given duration.
     
@@ -48,12 +48,12 @@ def convert_xls_to_xlsx(orchestrator_connection, path: str) -> None:
     """
     absolute_path = os.path.abspath(path)
     if absolute_path in conversion_in_progress:
-        orchestrator_connection.log_info(f"Conversion already in progress for {absolute_path}. Skipping.")
+        print(f"Conversion already in progress for {absolute_path}. Skipping.")
         return
     
     conversion_in_progress.add(absolute_path)
     try:
-        orchestrator_connection.log_info(f'Absolute path {absolute_path} found')
+        print(f'Absolute path {absolute_path} found')
         excel = win32.gencache.EnsureDispatch('Excel.Application')
         wb = excel.Workbooks.Open(absolute_path)
         wb.Sheets(1).Name = "YKMD_STD"
@@ -66,7 +66,7 @@ def convert_xls_to_xlsx(orchestrator_connection, path: str) -> None:
         del wb
         del excel
     except Exception as e:
-        orchestrator_connection.log_error(f"An unexpected error occurred: {e}")
+        print(f"An unexpected error occurred: {e}")
         raise e
     finally:
         conversion_in_progress.remove(absolute_path)
@@ -233,7 +233,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                 xlsx_file_path = os.path.join(downloads_folder, FileName + ".xlsx")
                 try:
                     orchestrator_connection.log_info(f'Converting {new_file_path}')
-                    future = convert_xls_to_xlsx(orchestrator_connection, new_file_path)
+                    future = convert_xls_to_xlsx( new_file_path)
                     try:
                         future.result()
                         orchestrator_connection.log_info("File converted successfully")
