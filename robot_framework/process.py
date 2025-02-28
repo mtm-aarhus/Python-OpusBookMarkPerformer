@@ -167,7 +167,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         # chrome_options.add_argument("--headless=new")  # More stable headless mode
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--disable-software-rasterizer")  # Prevent rendering crashes
-        chrome_options.add_argument("--disable-notifications")  # Prevent popups
+        # chrome_options.add_argument("--disable-notifications")  # Prevent popups
         chrome_options.add_argument("--disable-search-engine-choice-screen")
         chrome_options.add_experimental_option("prefs", {
             "download.default_directory": downloads_folder,
