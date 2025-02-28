@@ -21,6 +21,7 @@ import subprocess
 import sys
 import socket
 from pebble import concurrent
+from concurrent.futures import TimeoutError
 
 def find_free_port():
     """Find an available port for Chrome remote debugging."""
@@ -38,7 +39,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
    
     # Global variables for ensuring single execution
     conversion_in_progress = set()
-    # @concurrent.process(timeout=300)
+    @concurrent.process(timeout=300)
     def convert_xls_to_xlsx(path: str) -> None:
         """
         Converts an .xls file to .xlsx format. Times out if the process exceeds the given duration.
@@ -232,8 +233,12 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                 xlsx_file_path = os.path.join(downloads_folder, FileName + ".xlsx")
                 try:
                     orchestrator_connection.log_info(f'Converting {new_file_path}')
-                    convert_xls_to_xlsx(new_file_path)
-                    orchestrator_connection.log_info("File converted successfully")
+                    future = convert_xls_to_xlsx(new_file_path)
+                    try:
+                        future.result()
+                        orchestrator_connection.log_info("File converted successfully")
+                    except TimeoutError:
+                        orchestrator_connection.log_error(f'Conversion of {new_file_path} timed out')
             
                 except Exception as e:
                     gc.collect()
