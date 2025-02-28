@@ -38,7 +38,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
    
     # Global variables for ensuring single execution
     conversion_in_progress = set()
-    @concurrent.process(timeout=300)
+    # @concurrent.process(timeout=300)
     def convert_xls_to_xlsx(path: str) -> None:
         """
         Converts an .xls file to .xlsx format. Times out if the process exceeds the given duration.
