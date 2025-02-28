@@ -15,7 +15,7 @@ SMTP_PORT = 25
 SCREENSHOT_SENDER = "opus@aarhus.dk"
 
 # Constant/Credential names
-ERROR_EMAIL = "Error Email"
+ERROR_EMAIL = "balas"
 
 
 # Queue specific configs
