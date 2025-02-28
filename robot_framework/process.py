@@ -164,7 +164,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         # Configure Chrome options
         chrome_options = Options()
         chrome_options.add_argument(f"--remote-debugging-port={free_port}")  # Ensure free port is used
-        chrome_options.add_argument("--headless=new")  # More stable headless mode
+        # chrome_options.add_argument("--headless=new")  # More stable headless mode
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--disable-software-rasterizer")  # Prevent rendering crashes
         chrome_options.add_argument("--disable-notifications")  # Prevent popups
