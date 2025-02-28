@@ -286,6 +286,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
         # Upload file
         file_name = os.path.basename(xlsx_file_path)
+        orchestrator_connection.log_info(xlsx_file_path)
         with open(xlsx_file_path, "rb") as local_file:
             target_folder.upload_file(file_name, local_file.read()).execute_query()
             orchestrator_connection.log_info(f"File '{file_name}' uploaded successfully to {SharePointURL}")
