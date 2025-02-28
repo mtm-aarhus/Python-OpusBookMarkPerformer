@@ -33,46 +33,46 @@ def is_port_available(port):
     """Ensure the chosen port is still free before using it."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(("localhost", port)) != 0  # Returns True if free
+    
+# Global variables for ensuring single execution
+conversion_in_progress = set()
 
+@concurrent.process(timeout=300)
+def convert_xls_to_xlsx(orchestrator_connection, path: str) -> None:
+    """
+    Converts an .xls file to .xlsx format. Times out if the process exceeds the given duration.
+    
+    Args:
+        path (str): Path to the .xls file.
+        timeout (int): Maximum time allowed for conversion (in seconds).
+    """
+    absolute_path = os.path.abspath(path)
+    if absolute_path in conversion_in_progress:
+        orchestrator_connection.log_info(f"Conversion already in progress for {absolute_path}. Skipping.")
+        return
+    
+    conversion_in_progress.add(absolute_path)
+    try:
+        orchestrator_connection.log_info(f'Absolute path {absolute_path} found')
+        excel = win32.gencache.EnsureDispatch('Excel.Application')
+        wb = excel.Workbooks.Open(absolute_path)
+        wb.Sheets(1).Name = "YKMD_STD"
+
+        # FileFormat=51 is for .xlsx extension
+        new_path = os.path.splitext(absolute_path)[0] + ".xlsx"
+        wb.SaveAs(new_path, FileFormat=51)
+        wb.Close()
+        excel.Application.Quit()
+        del wb
+        del excel
+    except Exception as e:
+        orchestrator_connection.log_error(f"An unexpected error occurred: {e}")
+        raise e
+    finally:
+        conversion_in_progress.remove(absolute_path)
 
 def process(orchestrator_connection: OrchestratorConnection, queue_element: QueueElement | None = None) -> None:
    
-    # Global variables for ensuring single execution
-    conversion_in_progress = set()
-    @concurrent.process(timeout=300)
-    def convert_xls_to_xlsx(path: str) -> None:
-        """
-        Converts an .xls file to .xlsx format. Times out if the process exceeds the given duration.
-        
-        Args:
-            path (str): Path to the .xls file.
-            timeout (int): Maximum time allowed for conversion (in seconds).
-        """
-        absolute_path = os.path.abspath(path)
-        if absolute_path in conversion_in_progress:
-            orchestrator_connection.log_info(f"Conversion already in progress for {absolute_path}. Skipping.")
-            return
-        
-        conversion_in_progress.add(absolute_path)
-        try:
-            orchestrator_connection.log_info(f'Absolute path {absolute_path} found')
-            excel = win32.gencache.EnsureDispatch('Excel.Application')
-            wb = excel.Workbooks.Open(absolute_path)
-            wb.Sheets(1).Name = "YKMD_STD"
-
-            # FileFormat=51 is for .xlsx extension
-            new_path = os.path.splitext(absolute_path)[0] + ".xlsx"
-            wb.SaveAs(new_path, FileFormat=51)
-            wb.Close()
-            excel.Application.Quit()
-            del wb
-            del excel
-        except Exception as e:
-            orchestrator_connection.log_error(f"An unexpected error occurred: {e}")
-            raise e
-        finally:
-            conversion_in_progress.remove(absolute_path)
-
     orchestrator_connection.log_info("Started process")
 
     # Opus bruger
@@ -233,7 +233,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                 xlsx_file_path = os.path.join(downloads_folder, FileName + ".xlsx")
                 try:
                     orchestrator_connection.log_info(f'Converting {new_file_path}')
-                    future = convert_xls_to_xlsx(new_file_path)
+                    future = convert_xls_to_xlsx(orchestrator_connection, new_file_path)
                     try:
                         future.result()
                         orchestrator_connection.log_info("File converted successfully")
