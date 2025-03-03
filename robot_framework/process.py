@@ -104,8 +104,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
     # Ensure that at least one of the options is not None
     if all(option is None for option in [Daily, MonthEnd, MonthStart, Yearly]):
-        print("No option selected. Exiting.")
-        sys.exit()
+        Run = False
 
     Run = False
     xlsx_file_path_check = False
@@ -125,7 +124,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         Run = True
 
     if not BookmarkID:
-        exit()
+        Run = False
 
     if Run:
         orchestrator_connection.log_info("Connecting to sharepoint")
@@ -255,53 +254,53 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             driver.quit()
             raise e
 
-    if xlsx_file_path_check:
-        file_name = os.path.basename(xlsx_file_path)
-        orchestrator_connection.log_info("Uploading file to sharepoint")
+        if xlsx_file_path_check:
+            file_name = os.path.basename(xlsx_file_path)
+            orchestrator_connection.log_info("Uploading file to sharepoint")
 
-        # Extract path correctly
-        query_params = parse_qs(parsed_url.query)
-        id_param = query_params.get("id", [None])[0]
+            # Extract path correctly
+            query_params = parse_qs(parsed_url.query)
+            id_param = query_params.get("id", [None])[0]
 
-        if id_param:
-            # If it's a sharing link with an ID, extract the correct path
-            decoded_path = unquote(id_param).rstrip('/')
-        else:
-            # Normal URL or sharing link without ID
-            if "/r/" in SharePointURL:
-                decoded_path = SharePointURL.split('/r/', 1)[1].split('?', 1)[0]
+            if id_param:
+                # If it's a sharing link with an ID, extract the correct path
+                decoded_path = unquote(id_param).rstrip('/')
             else:
-                decoded_path = parsed_url.path.lstrip('/')
-        orchestrator_connection.log_info('Path extracted')
+                # Normal URL or sharing link without ID
+                if "/r/" in SharePointURL:
+                    decoded_path = SharePointURL.split('/r/', 1)[1].split('?', 1)[0]
+                else:
+                    decoded_path = parsed_url.path.lstrip('/')
+            orchestrator_connection.log_info('Path extracted')
 
-        # **Replace %20 with spaces to match SharePoint folder structure**
-        decoded_path = decoded_path.replace("%20", " ")
+            # **Replace %20 with spaces to match SharePoint folder structure**
+            decoded_path = decoded_path.replace("%20", " ")
 
-        # Ensure the correct format
-        if not decoded_path.startswith("/"):
-            decoded_path = "/" + decoded_path
+            # Ensure the correct format
+            if not decoded_path.startswith("/"):
+                decoded_path = "/" + decoded_path
 
-        folder_relative_url = decoded_path
-        target_folder = ctx.web.get_folder_by_server_relative_path(folder_relative_url)
-        ctx.load(target_folder)
-        ctx.execute_query()
+            folder_relative_url = decoded_path
+            target_folder = ctx.web.get_folder_by_server_relative_path(folder_relative_url)
+            ctx.load(target_folder)
+            ctx.execute_query()
 
-        # Upload file
-        file_name = os.path.basename(xlsx_file_path)
-        orchestrator_connection.log_info(xlsx_file_path)
-        with open(xlsx_file_path, "rb") as local_file:
-            target_folder.upload_file(file_name, local_file.read()).execute_query()
-            orchestrator_connection.log_info(f"File '{file_name}' uploaded successfully to {SharePointURL}")
+            # Upload file
+            file_name = os.path.basename(xlsx_file_path)
+            orchestrator_connection.log_info(xlsx_file_path)
+            with open(xlsx_file_path, "rb") as local_file:
+                target_folder.upload_file(file_name, local_file.read()).execute_query()
+                orchestrator_connection.log_info(f"File '{file_name}' uploaded successfully to {SharePointURL}")
+                
+            if os.path.exists(xlsx_file_path):
+                os.remove(xlsx_file_path)
+        else:
+            print("An error occured - file was not processed correctly")
+            orchestrator_connection.log_info("An error occured - file was not processed correctly")
             
-        if os.path.exists(xlsx_file_path):
-            os.remove(xlsx_file_path)
-    else:
-        print("An error occured - file was not processed correctly")
-        orchestrator_connection.log_info("An error occured - file was not processed correctly")
-        
-    #Deleting potential leftover files from downloads folder
-    orchestrator_connection.log_info('Deleting local files')
-    if os.path.exists(downloads_folder + '\\' + FileName + ".xls"):
-        os.remove(downloads_folder + '\\' + FileName + ".xls")
-    if os.path.exists(downloads_folder + '\\' + "YKMD_STD.xls"):
-        os.remove(downloads_folder + '\\' + "YKMD_STD.xls")
+        #Deleting potential leftover files from downloads folder
+        orchestrator_connection.log_info('Deleting local files')
+        if os.path.exists(downloads_folder + '\\' + FileName + ".xls"):
+            os.remove(downloads_folder + '\\' + FileName + ".xls")
+        if os.path.exists(downloads_folder + '\\' + "YKMD_STD.xls"):
+            os.remove(downloads_folder + '\\' + "YKMD_STD.xls")
