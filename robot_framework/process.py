@@ -23,17 +23,6 @@ import socket
 from pebble import concurrent
 from concurrent.futures import TimeoutError
 
-def find_free_port():
-    """Find an available port for Chrome remote debugging."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("localhost", 0))
-        return s.getsockname()[1]
-
-def is_port_available(port):
-    """Ensure the chosen port is still free before using it."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex(("localhost", port)) != 0  # Returns True if free
-    
 # Global variables for ensuring single execution
 conversion_in_progress = set()
 
@@ -156,13 +145,9 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             os.remove(file_path)
             print('File removed')
 
-        free_port = find_free_port()
-        if not is_port_available(free_port):
-            print(f"Port {free_port} is in use! Finding another...")
-            free_port = find_free_port()
         # Configure Chrome options
         chrome_options = Options()
-        chrome_options.add_argument(f"--remote-debugging-port={free_port}")  # Ensure free port is used
+        chrome_options.add_argument('--remote-debugging-pipe')
         chrome_options.add_argument("--headless=new")  # More stable headless mode
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_experimental_option("prefs", {
