@@ -182,7 +182,6 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             
             orchestrator_connection.log_info("Logged in to Opus portal successfully")
             driver.get(OpusBookmark)
-            time.sleep(2)
             WebDriverWait(driver, timeout = 60*15).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe[id^='iframe_Roundtrip']")))
             orchestrator_connection.log_info("First thing appeared")
 
