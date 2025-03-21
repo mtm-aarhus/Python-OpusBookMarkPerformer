@@ -215,7 +215,11 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                     orchestrator_connection.update_credential('OpusBruger', OpusUser, password)
                     orchestrator_connection.log_info('Password changed and credential updated')
                     time.sleep(2)
+            
+                    driver.get(OpusBookmark)
+                    WebDriverWait(driver, timeout = 60*10).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe[id^='iframe_Roundtrip']")))
 
+            orchestrator_connection.log_info('Looking for export button')
             WebDriverWait(driver, timeout = 60*15).until(EC.presence_of_element_located((By.ID, "BUTTON_EXPORT_btn1_acButton")))
             driver.find_element(By.ID, "BUTTON_EXPORT_btn1_acButton").click()
             orchestrator_connection.log_info("Export button clicked")
