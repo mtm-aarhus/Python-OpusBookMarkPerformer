@@ -192,6 +192,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                     WebDriverWait(driver, 60).until(EC.element_to_be_clickable((By.ID, "changeButton")))
                 except TimeoutException:
                     orchestrator_connection.log_info("Change button not found or not clickable")
+                    raise TimeoutException
                 else:
                     lower = string.ascii_lowercase
                     upper = string.ascii_uppercase
