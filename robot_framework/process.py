@@ -188,8 +188,8 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             except Exception as e:
                 orchestrator_connection.log_info(f'Exception {e}')
                 try:
-                    WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, "changeButton")))
-                    WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "changeButton")))
+                    WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.ID, "changeButton")))
+                    WebDriverWait(driver, 60).until(EC.element_to_be_clickable((By.ID, "changeButton")))
                 except TimeoutException:
                     orchestrator_connection.log_info("Change button not found or not clickable")
                 else:
