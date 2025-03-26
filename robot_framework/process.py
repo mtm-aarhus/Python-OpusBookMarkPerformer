@@ -186,7 +186,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                 driver.get(OpusBookmark)
                 WebDriverWait(driver, timeout = 60*10).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe[id^='iframe_Roundtrip']")))
             except Exception as e:
-                orchestrator_connection.log_info(f'Fejl ved at finde knap')
+                orchestrator_connection.log_info(f'Fejl ved at finde knap, {e}')
                 try:
                     WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.ID, "changeButton")))
                     WebDriverWait(driver, 60).until(EC.element_to_be_clickable((By.ID, "changeButton")))
