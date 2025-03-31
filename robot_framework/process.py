@@ -187,37 +187,35 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                 WebDriverWait(driver, timeout = 60*10).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe[id^='iframe_Roundtrip']")))
             except Exception as e:
                 orchestrator_connection.log_info(f'Fejl ved at finde knap, {e}')
-                try:
-                    WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.ID, "changeButton")))
-                    WebDriverWait(driver, 60).until(EC.element_to_be_clickable((By.ID, "changeButton")))
-                except TimeoutException:
-                    orchestrator_connection.log_info("Change button not found or not clickable")
-                    raise TimeoutException
-                else:
-                    lower = string.ascii_lowercase
-                    upper = string.ascii_uppercase
-                    digits = string.digits
-                    special = "!@#&%"
 
-                    password_chars = []
-                    password_chars += random.choices(lower, k=2)
-                    password_chars += random.choices(upper, k=2)
-                    password_chars += random.choices(digits, k=4)
-                    password_chars += random.choices(special, k=2)
+                orchestrator_connection.log_info('Trying to find change button')
+                WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.ID, "changeButton")))
+                WebDriverWait(driver, 60).until(EC.element_to_be_clickable((By.ID, "changeButton")))
+                
+                lower = string.ascii_lowercase
+                upper = string.ascii_uppercase
+                digits = string.digits
+                special = "!@#&%"
 
-                    random.shuffle(password_chars)
-                    password = ''.join(password_chars)
+                password_chars = []
+                password_chars += random.choices(lower, k=2)
+                password_chars += random.choices(upper, k=2)
+                password_chars += random.choices(digits, k=4)
+                password_chars += random.choices(special, k=2)
 
-                    driver.find_element(By.ID, "inputUsername").send_keys(OpusPassword)
-                    driver.find_element(By.NAME, "j_sap_password").send_keys(password)
-                    driver.find_element(By.NAME, "j_sap_again").send_keys(password)
-                    driver.find_element(By.ID, "changeButton").click()
-                    orchestrator_connection.update_credential('OpusBruger', OpusUser, password)
-                    orchestrator_connection.log_info('Password changed and credential updated')
-                    time.sleep(2)
-            
-                    driver.get(OpusBookmark)
-                    WebDriverWait(driver, timeout = 60*10).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe[id^='iframe_Roundtrip']")))
+                random.shuffle(password_chars)
+                password = ''.join(password_chars)
+
+                driver.find_element(By.ID, "inputUsername").send_keys(OpusPassword)
+                driver.find_element(By.NAME, "j_sap_password").send_keys(password)
+                driver.find_element(By.NAME, "j_sap_again").send_keys(password)
+                driver.find_element(By.ID, "changeButton").click()
+                orchestrator_connection.update_credential('OpusBruger', OpusUser, password)
+                orchestrator_connection.log_info('Password changed and credential updated')
+                time.sleep(2)
+        
+                driver.get(OpusBookmark)
+                WebDriverWait(driver, timeout = 60*10).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe[id^='iframe_Roundtrip']")))
 
             orchestrator_connection.log_info('Looking for export button')
             WebDriverWait(driver, timeout = 60*15).until(EC.presence_of_element_located((By.ID, "BUTTON_EXPORT_btn1_acButton")))
