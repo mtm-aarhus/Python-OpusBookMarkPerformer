@@ -54,7 +54,7 @@ def main():
 
                             downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
                             specific_content = json.loads(queue_element.data)
-                            UdviklerMail = orchestrator_connection.get_constant("balas").value
+                            UdviklerMail = orchestrator_connection.get_constant("Error Email").value
                             MailModtager = specific_content.get("Ansvarlig i Økonomi", None)
                             MailModtager = UdviklerMail
                             FileName = specific_content.get("Filnavn", None)
