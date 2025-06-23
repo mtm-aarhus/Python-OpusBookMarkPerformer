@@ -104,7 +104,7 @@ def send_error_email(to_address: str | list[str], file_name: str, UdviklerMail )
         # SMTP Configuration (from your provided details)
     SMTP_SERVER = "smtp.adm.aarhuskommune.dk"
     SMTP_PORT = 25
-    SCREENSHOT_SENDER = "aktbob@aarhus.dk"
+    SCREENSHOT_SENDER = "opus@aarhus.dk"
     # Email subject
     subject = f"Fejl i processeringen af filen {file_name}"
 
