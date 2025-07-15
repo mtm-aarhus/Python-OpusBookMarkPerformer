@@ -142,9 +142,12 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
         file_path = os.path.join(downloads_folder, FileName + ".xls")
 
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            print('File removed')
+        for filename in os.listdir(downloads_folder):
+            if FileName in filename or "YMKD" in filename:
+                file_path = os.path.join(downloads_folder, filename)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    print(f"Removed: {filename}")
 
         # Configure Chrome options
         chrome_options = Options()

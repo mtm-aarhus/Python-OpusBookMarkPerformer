@@ -101,7 +101,7 @@ def send_error_email(to_address: str | list[str], file_name: str, UdviklerMail )
         deskpro_id (str): The DeskPro ID for constructing the DeskPro link.
         sharepoint_link (str): The SharePoint link to include in the email body.
     """
-        # SMTP Configuration (from your provided details)
+    # SMTP Configuration (from your provided details)
     SMTP_SERVER = "smtp.adm.aarhuskommune.dk"
     SMTP_PORT = 25
     SCREENSHOT_SENDER = "opus@aarhus.dk"
