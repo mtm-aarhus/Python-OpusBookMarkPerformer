@@ -29,7 +29,7 @@ def handle_error(message: str, error: Exception, queue_element: QueueElement | N
     error_msg = error_msg[:490]+error_msg[-500:]
     error_email = orchestrator_connection.get_constant(config.ERROR_EMAIL).value
 
-    orchestrator_connection.log_error(error_msg)
+    orchestrator_connection.log_info(error_msg)
     if queue_element:
         orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.FAILED, error_msg[:999])
     error_screenshot.send_error_screenshot(error_email, error, orchestrator_connection.process_name)
@@ -45,5 +45,5 @@ def log_exception(orchestrator_connection: OrchestratorConnection) -> callable:
         callable: A function that can be assigned to sys.excepthook.
     """
     def inner(exception_type, value, traceback_string):
-        orchestrator_connection.log_error(f"Uncaught Exception:\nType: {exception_type}\nValue: {value}\nTrace: {traceback_string}")
+        orchestrator_connection.log_info(f"Uncaught Exception:\nType: {exception_type}\nValue: {value}\nTrace: {traceback_string}")
     return inner

@@ -180,7 +180,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                 driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
                 break
             except Exception as e:
-                orchestrator_connection.log_error(f'Forsøg {attempt} fejlede: {e}')
+                orchestrator_connection.log_info(f'Forsøg {attempt} fejlede: {e}')
                 if attempt == max_retries:
                     raise
                 time.sleep(1)
@@ -267,7 +267,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                         future.result()
                         orchestrator_connection.log_info("File converted successfully")
                     except TimeoutError:
-                        orchestrator_connection.log_error(f'Conversion of {new_file_path} timed out')
+                        orchestrator_connection.log_info(f'Conversion of {new_file_path} timed out')
             
                 except Exception as e:
                     gc.collect()
@@ -275,11 +275,11 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                     time.sleep(2)
                     if os.path.exists(xlsx_file_path):
                         os.remove(xlsx_file_path)
-                    orchestrator_connection.log_error(f'An error happened {str(e)}')
+                    orchestrator_connection.log_info(f'An error happened {str(e)}')
                     raise e
             driver.quit()
         except Exception as e:
-            orchestrator_connection.log_error(f"An error occurred: {e}")
+            orchestrator_connection.log_info(f"An error occurred: {e}")
             print(f"An error occurred: {e}")
             driver.quit()
             raise e
