@@ -56,7 +56,6 @@ def main():
                             specific_content = json.loads(queue_element.data)
                             UdviklerMail = orchestrator_connection.get_constant("Error Email").value
                             MailModtager = specific_content.get("Ansvarlig i Økonomi", None)
-                            MailModtager = UdviklerMail
                             FileName = specific_content.get("Filnavn", None)
                             if os.path.exists(downloads_folder + '\\' + FileName + ".xls"):
                                 os.remove(downloads_folder + '\\' + FileName + ".xls")
@@ -68,8 +67,8 @@ def main():
                                 reset.reset(orchestrator_connection)
                             else:
                                 orchestrator_connection.log_trace(f"Queue element failed after {attempt} attempts.")
-                                
-                                send_error_email(MailModtager, FileName, UdviklerMail)
+                                if MailModtager:
+                                    send_error_email(MailModtager, FileName, UdviklerMail)
                                 raise
                     orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE)
 
@@ -91,7 +90,7 @@ def main():
     if config.FAIL_ROBOT_ON_TOO_MANY_ERRORS and error_count == config.MAX_RETRY_COUNT:
         raise RuntimeError("Process failed too many times.")
     
-def send_error_email(to_address: str | list[str], file_name: str, UdviklerMail ):
+def send_error_email(to_address: str | list[str], file_name: str, UdviklerMail):
     """
     Sends an email notification with the provided body and subject.
 
@@ -112,7 +111,7 @@ def send_error_email(to_address: str | list[str], file_name: str, UdviklerMail )
     body = f"""
     <html>
     <body>
-        <p>Der var en fejl i processeringen af filen {file_name}. Hvis fejlen fortsætter, kontakt udvikler</p>
+        <p>Der var en fejl i processeringen af filen {file_name}. Tjek om link til rapport evt. skal opdateres.</p>
     </body>
     </html>
     """
@@ -122,10 +121,9 @@ def send_error_email(to_address: str | list[str], file_name: str, UdviklerMail )
     msg['To'] = ', '.join(to_address) if isinstance(to_address, list) else to_address
     msg['From'] = SCREENSHOT_SENDER
     msg['Subject'] = subject
+    msg['Bcc'] = UdviklerMail
     msg.set_content("Please enable HTML to view this message.")
     msg.add_alternative(body, subtype='html')
-    msg['Reply-To'] = UdviklerMail
-    msg['Bcc'] = UdviklerMail
 
     # Send the email using SMTP
     try:
@@ -133,4 +131,4 @@ def send_error_email(to_address: str | list[str], file_name: str, UdviklerMail )
             smtp.send_message(msg)
             
     except Exception as e:
-        print(f"Failed to send success email: {e}")
+        print(f"Failed to send error email: {e}")

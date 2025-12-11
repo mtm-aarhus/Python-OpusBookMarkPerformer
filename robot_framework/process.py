@@ -70,12 +70,6 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     OpusUser = OpusLogin.username
     OpusPassword = OpusLogin.password 
 
-    # Robotpassword
-    RobotCredential = orchestrator_connection.get_credential("Robot365User") 
-    RobotUsername = RobotCredential.username
-    RobotPassword = RobotCredential.password
-
-
     specific_content = json.loads(queue_element.data)
 
     orchestrator_connection.log_info("Assigning variables")
@@ -132,10 +126,6 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         else:
             print("WARNING: Could not determine if this is a Teams or Sites URL. Using default base_url.")
 
-
-        # Authenticate with SharePoint
-        # credentials = UserCredential(RobotUsername,RobotPassword)
-        # ctx = ClientContext(base_url).with_credentials(credentials)
         certification = orchestrator_connection.get_credential("SharePointCert")
         api = orchestrator_connection.get_credential("SharePointAPI")
         
