@@ -54,7 +54,6 @@ def main():
 
                             downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
                             specific_content = json.loads(queue_element.data)
-                            UdviklerMail = orchestrator_connection.get_constant("Error Email").value
                             MailModtager = specific_content.get("Ansvarlig i Økonomi", None)
                             FileName = specific_content.get("Filnavn", None)
                             if os.path.exists(downloads_folder + '\\' + FileName + ".xls"):
@@ -68,7 +67,7 @@ def main():
                             else:
                                 orchestrator_connection.log_trace(f"Queue element failed after {attempt} attempts.")
                                 if MailModtager:
-                                    send_error_email(MailModtager, FileName, UdviklerMail)
+                                    send_error_email(MailModtager, FileName)
                                 raise
                     orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE)
 
@@ -90,7 +89,7 @@ def main():
     if config.FAIL_ROBOT_ON_TOO_MANY_ERRORS and error_count == config.MAX_RETRY_COUNT:
         raise RuntimeError("Process failed too many times.")
     
-def send_error_email(to_address: str | list[str], file_name: str, UdviklerMail):
+def send_error_email(to_address: str | list[str], file_name: str):
     """
     Sends an email notification with the provided body and subject.
 
@@ -121,7 +120,6 @@ def send_error_email(to_address: str | list[str], file_name: str, UdviklerMail):
     msg['To'] = ', '.join(to_address) if isinstance(to_address, list) else to_address
     msg['From'] = SCREENSHOT_SENDER
     msg['Subject'] = subject
-    msg['Bcc'] = UdviklerMail
     msg.set_content("Please enable HTML to view this message.")
     msg.add_alternative(body, subtype='html')
 
