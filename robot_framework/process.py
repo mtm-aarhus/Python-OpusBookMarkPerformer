@@ -63,16 +63,12 @@ def convert_xls_to_xlsx( path: str) -> None:
 
 def process(orchestrator_connection: OrchestratorConnection, queue_element: QueueElement | None = None) -> None:
    
-    orchestrator_connection.log_info("Started process")
-
     # Opus bruger
     OpusLogin = orchestrator_connection.get_credential("OpusBruger")
     OpusUser = OpusLogin.username
     OpusPassword = OpusLogin.password 
 
     specific_content = json.loads(queue_element.data)
-
-    orchestrator_connection.log_info("Assigning variables")
 
     # Assign variables from SpecificContent
     BookmarkID = specific_content.get("Bookmark")
@@ -176,7 +172,6 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                 time.sleep(1)
         
         try:
-            orchestrator_connection.log_info("Navigating to Opus login page")
             driver.get(orchestrator_connection.get_constant("OpusAdgangUrl").value)
             WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.ID, "logonuidfield")))
             
@@ -184,13 +179,10 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             driver.find_element(By.ID, "logonpassfield").send_keys(OpusPassword)
             driver.find_element(By.ID, "buttonLogon").click()
             
-            orchestrator_connection.log_info("Logged in to Opus portal successfully")
             try: 
                 driver.get(OpusBookmark)
                 WebDriverWait(driver, timeout = 60*10).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe[id^='iframe_Roundtrip']")))
             except Exception as e:
-                orchestrator_connection.log_info(f'Fejl ved at finde knap, {e}')
-
                 orchestrator_connection.log_info('Trying to find change button')
                 WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.ID, "changeButton")))
                 WebDriverWait(driver, 60).until(EC.element_to_be_clickable((By.ID, "changeButton")))
@@ -220,10 +212,8 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                 driver.get(OpusBookmark)
                 WebDriverWait(driver, timeout = 60*10).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe[id^='iframe_Roundtrip']")))
 
-            orchestrator_connection.log_info('Looking for export button')
             WebDriverWait(driver, timeout = 60*15).until(EC.presence_of_element_located((By.ID, "BUTTON_EXPORT_btn1_acButton")))
             driver.find_element(By.ID, "BUTTON_EXPORT_btn1_acButton").click()
-            orchestrator_connection.log_info("Export button clicked")
             initial_file_count = len(os.listdir(downloads_folder))
 
             orchestrator_connection.log_info("Waiting for file download to complete")
@@ -236,7 +226,6 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                         [os.path.join(downloads_folder, f) for f in files], key=os.path.getctime
                     )
                     if latest_file.endswith(".xls"):
-                        orchestrator_connection.log_info('Found xls file')
                         new_file_path = os.path.join(downloads_folder, f"{FileName}.xls")
                         os.rename(latest_file, new_file_path)
                         orchestrator_connection.log_info(f"File downloaded and renamed to {new_file_path}")
@@ -255,7 +244,6 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                     future = convert_xls_to_xlsx( new_file_path)
                     try:
                         future.result()
-                        orchestrator_connection.log_info("File converted successfully")
                     except TimeoutError:
                         orchestrator_connection.log_info(f'Conversion of {new_file_path} timed out')
             
@@ -276,8 +264,6 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
         if xlsx_file_path_check:
             file_name = os.path.basename(xlsx_file_path)
-            orchestrator_connection.log_info("Uploading file to sharepoint")
-
             # Extract path correctly
             query_params = parse_qs(parsed_url.query)
             id_param = query_params.get("id", [None])[0]
@@ -291,7 +277,6 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                     decoded_path = SharePointURL.split('/r/', 1)[1].split('?', 1)[0]
                 else:
                     decoded_path = parsed_url.path.lstrip('/')
-            orchestrator_connection.log_info('Path extracted')
 
             # **Replace %20 with spaces to match SharePoint folder structure**
             decoded_path = decoded_path.replace("%20", " ")
@@ -307,10 +292,8 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
             # Upload file
             file_name = os.path.basename(xlsx_file_path)
-            orchestrator_connection.log_info(xlsx_file_path)
             with open(xlsx_file_path, "rb") as local_file:
                 target_folder.upload_file(file_name, local_file.read()).execute_query()
-                orchestrator_connection.log_info(f"File '{file_name}' uploaded successfully to {SharePointURL}")
                 
             if os.path.exists(xlsx_file_path):
                 os.remove(xlsx_file_path)
