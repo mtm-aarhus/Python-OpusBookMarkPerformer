@@ -110,7 +110,7 @@ def send_error_email(to_address: str | list[str], file_name: str):
     body = f"""
     <html>
     <body>
-        <p>Der var en fejl i processeringen af filen {file_name}. Tjek om link til rapport evt. skal opdateres.</p>
+        <p>Der var en fejl i processeringen af filen {file_name}, og filen er ikke opdateret i dag. Hvis fejlen fortsætter kan du overveje at opdatere bogmærket til en version, der omfatter mindre data.</p>
     </body>
     </html>
     """
