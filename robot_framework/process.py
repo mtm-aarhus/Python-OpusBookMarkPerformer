@@ -181,7 +181,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             
             try: 
                 driver.get(OpusBookmark)
-                WebDriverWait(driver, timeout = 60*10).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe[id^='iframe_Roundtrip']")))
+                WebDriverWait(driver, timeout = 60*6).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe[id^='iframe_Roundtrip']")))
             except Exception as e:
                 orchestrator_connection.log_info('Trying to find change button')
                 WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.ID, "changeButton")))
@@ -210,9 +210,9 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                 time.sleep(2)
         
                 driver.get(OpusBookmark)
-                WebDriverWait(driver, timeout = 60*10).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe[id^='iframe_Roundtrip']")))
+                WebDriverWait(driver, timeout = 60*6).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe[id^='iframe_Roundtrip']")))
 
-            WebDriverWait(driver, timeout = 60*15).until(EC.presence_of_element_located((By.ID, "BUTTON_EXPORT_btn1_acButton")))
+            WebDriverWait(driver, timeout = 60*10).until(EC.presence_of_element_located((By.ID, "BUTTON_EXPORT_btn1_acButton")))
             driver.find_element(By.ID, "BUTTON_EXPORT_btn1_acButton").click()
             initial_file_count = len(os.listdir(downloads_folder))
 
