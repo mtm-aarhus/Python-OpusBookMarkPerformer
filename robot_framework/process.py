@@ -23,6 +23,8 @@ import random
 import string
 from pebble import concurrent
 from concurrent.futures import TimeoutError
+from selenium.webdriver.remote.remote_connection import RemoteConnection
+
 
 # Global variables for ensuring single execution
 conversion_in_progress = set()
@@ -213,7 +215,13 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                 WebDriverWait(driver, timeout = 60*6).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe[id^='iframe_Roundtrip']")))
 
             WebDriverWait(driver, timeout = 60*10).until(EC.presence_of_element_located((By.ID, "BUTTON_EXPORT_btn1_acButton")))
-            driver.find_element(By.ID, "BUTTON_EXPORT_btn1_acButton").click()
+            RemoteConnection.set_timeout(600)
+            try:
+                driver.find_element(By.ID, "BUTTON_EXPORT_btn1_acButton").click()
+            except:
+                raise
+            finally:
+                RemoteConnection.set_timeout(120)
             initial_file_count = len(os.listdir(downloads_folder))
 
             orchestrator_connection.log_info("Waiting for file download to complete")
